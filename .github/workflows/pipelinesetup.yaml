@@ -1,0 +1,36 @@
+name: Selenium IDE CI
+
+on:
+  push:
+    branches: - main
+  pull_request:
+    branches: - main
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up .NET Core
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: '6.0.x'
+
+    - name: Install Chrome
+      run: |
+        powershell -command "Invoke-WebRequest -Uri 'https://dl.google.com/chrome/install/latest/chrome_installer.exe' -OutFile 'chrome_installer.exe'"
+        powershell -command "Start-Process 'chrome_installer.exe' -ArgumentList '/silent /install' -NoNewWindow -Wait"
+        powershell -command "Remove-Item -Path 'chrome_installer.exe'"
+
+    - name: Install dependencies
+      run: dotnet restore
+
+    - name: Build
+      run: dotnet build --no-restore
+
+    - name: Run tests
+      env:
+        CHROMEWEBDRIVER: C:\Program Files\Google\Chrome\Application\chrome.exe
+      run: dotnet test --verbosity normal
